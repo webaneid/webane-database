@@ -1,5 +1,6 @@
 /.gitignore export-ignore
 /.gitattributes export-ignore
+/.github export-ignore
 /BLUEPRINT.md export-ignore
 /SOP-table.md export-ignore
 /sop-autocomplete.md export-ignore

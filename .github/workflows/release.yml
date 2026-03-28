@@ -1,0 +1,55 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate plugin version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#v}"
+          plugin_version="$(sed -n "s/^[[:space:]]*Version:[[:space:]]*//p" webane-database.php | head -n 1 | tr -d '\r')"
+
+          if [ -z "${plugin_version}" ]; then
+            echo "Plugin version not found in webane-database.php" >&2
+            exit 1
+          fi
+
+          if [ "${plugin_version}" != "${tag_version}" ]; then
+            echo "Tag version ${tag_version} does not match plugin version ${plugin_version}" >&2
+            exit 1
+          fi
+
+      - name: Build plugin ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          git archive \
+            --format=zip \
+            --output="dist/webane-database.zip" \
+            --prefix="webane-database/" \
+            "${GITHUB_SHA}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/webane-database.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false

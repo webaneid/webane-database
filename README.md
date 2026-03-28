@@ -43,10 +43,18 @@ Plugin ini membaca update dari GitHub Releases repository:
 
 - Repository: [https://github.com/webaneid/webane-database](https://github.com/webaneid/webane-database)
 
-Agar update otomatis berjalan dengan benar:
+Alur rilis yang dipakai:
 
-1. Buat GitHub Release dengan tag versi plugin, misalnya `v0.0.3`.
-2. Upload asset ZIP plugin dengan nama `webane-database.zip`.
-3. Pastikan file utama plugin memakai versi yang sama dengan tag release.
+1. Ubah versi plugin di `webane-database.php`.
+2. Commit dan push ke branch `main`.
+3. Buat tag versi, misalnya `v0.0.4`.
+4. Push tag ke GitHub.
+5. GitHub Actions otomatis akan:
+   - memvalidasi versi plugin sama dengan tag,
+   - membuat ZIP plugin dari repository,
+   - membuat GitHub Release,
+   - mengunggah asset `webane-database.zip`.
+
+Dengan alur ini, ZIP release tidak perlu dibuat manual.
 
 Di halaman plugin WordPress tersedia tombol `Check Update` untuk memaksa pengecekan update dari GitHub.
