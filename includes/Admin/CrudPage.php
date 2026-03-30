@@ -156,7 +156,7 @@ final class CrudPage
 
     public static function handle_request(): void
     {
-        if (! is_admin() || ! current_user_can('manage_options')) {
+        if (! is_admin() || ! current_user_can(Menu::capability())) {
             return;
         }
 

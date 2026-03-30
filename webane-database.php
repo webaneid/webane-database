@@ -3,7 +3,7 @@
  * Plugin Name: Webane Database
  * Plugin URI: https://webane.com
  * Description: Database pesantren dan alumni.
- * Version: 0.0.3
+ * Version: 0.0.4
  * Author: Webane Indonesia
  * Author URI: https://webane.com
  * Update URI: https://github.com/webaneid/webane-database
@@ -15,7 +15,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('WDB_PLUGIN_VERSION', '0.0.3');
+define('WDB_PLUGIN_VERSION', '0.0.4');
 define('WDB_PLUGIN_FILE', __FILE__);
 define('WDB_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('WDB_PLUGIN_URL', plugin_dir_url(__FILE__));

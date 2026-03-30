@@ -8,6 +8,11 @@ if (! defined('ABSPATH')) {
 
 final class Menu
 {
+    public static function capability(): string
+    {
+        return 'edit_others_posts';
+    }
+
     public static function boot(): void
     {
         add_action('admin_menu', [self::class, 'register']);
@@ -24,7 +29,7 @@ final class Menu
         add_menu_page(
             'Webane Database',
             'Webane Database',
-            'manage_options',
+            self::capability(),
             'wdb-dashboard',
             [self::class, 'render_dashboard'],
             'dashicons-database',
@@ -35,7 +40,7 @@ final class Menu
             'wdb-dashboard',
             'Dashboard Database',
             'Dashboard Database',
-            'manage_options',
+            self::capability(),
             'wdb-dashboard',
             [self::class, 'render_dashboard']
         );
@@ -44,7 +49,7 @@ final class Menu
             'wdb-dashboard',
             'Pesantren',
             'Pesantren',
-            'manage_options',
+            self::capability(),
             'wdb-pesantren',
             [self::class, 'render_pesantren']
         );
@@ -53,7 +58,7 @@ final class Menu
             'wdb-dashboard',
             'Alumni',
             'Alumni',
-            'manage_options',
+            self::capability(),
             'wdb-alumni',
             [self::class, 'render_alumni']
         );
@@ -62,7 +67,7 @@ final class Menu
             'wdb-dashboard',
             'Wilayah',
             'Wilayah',
-            'manage_options',
+            self::capability(),
             'wdb-regions',
             [self::class, 'render_regions']
         );
@@ -334,7 +339,7 @@ final class Menu
 
     public static function ajax_get_regions(): void
     {
-        if (! current_user_can('manage_options')) {
+        if (! current_user_can(self::capability())) {
             wp_send_json_error(['message' => 'Unauthorized'], 403);
         }
 
@@ -387,7 +392,7 @@ final class Menu
 
     public static function handle_dashboard_settings(): void
     {
-        if (! is_admin() || ! current_user_can('manage_options')) {
+        if (! is_admin() || ! current_user_can(self::capability())) {
             return;
         }
 
