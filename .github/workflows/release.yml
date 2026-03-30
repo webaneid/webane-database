@@ -23,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           tag_version="${GITHUB_REF_NAME#v}"
-          plugin_version="$(sed -n "s/^[[:space:]]*Version:[[:space:]]*//p" webane-database.php | head -n 1 | tr -d '\r')"
+          plugin_version="$(sed -n "s/^[[:space:]]*\\*[[:space:]]*Version:[[:space:]]*//p" webane-database.php | head -n 1 | tr -d '\r')"
 
           if [ -z "${plugin_version}" ]; then
             echo "Plugin version not found in webane-database.php" >&2
