@@ -666,18 +666,15 @@ final class Forms
 
         if (empty($rows)) {
             $html .= '<div class="wdb-list-mobile__item"><p>Tidak ada data pesantren.</p></div></div>';
-            $html .= '<div class="wdb-list-table-wrap"><table class="wdb-list-table"><thead><tr><th>Nama Pesantren</th><th>Berdiri</th><th>Pimpinan</th><th>Jenjang</th><th>Jumlah Santri</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>';
+            $html .= '<div class="wdb-list-table-wrap"><table class="wdb-list-table"><thead><tr><th>Nama Pesantren</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody></tbody></table></div></div>';
 
             return $html;
         }
 
         foreach ($rows as $row) {
             $address = self::format_public_address_summary($row);
-            $year = self::format_public_year((string) ($row['berdiri_sejak'] ?? ''));
             $html .= '<div class="wdb-list-mobile__item">';
-            $html .= '<div class="wdb-list-mobile__head"><div class="wdb-list-mobile__title-group"><p class="wdb-list-mobile__title">' . esc_html((string) $row['nama_pesantren']) . '</p><p class="wdb-list-mobile__subtitle">' . esc_html((string) ($row['nama_pimpinan'] ?? '-')) . '</p></div></div>';
-            $html .= '<div class="wdb-list-mobile__meta"><span>' . esc_html($year) . '</span><span class="wdb-list-mobile__dot">•</span><span>' . esc_html((string) ($row['nama_pimpinan'] ?? '-')) . '</span></div>';
-            $html .= '<div class="wdb-list-mobile__meta"><span>' . esc_html(strtoupper((string) $row['jenjang_pendidikan'])) . '</span><span class="wdb-list-mobile__dot">•</span><span>' . esc_html((string) $row['jumlah_santri_total']) . ' santri</span></div>';
+            $html .= '<div class="wdb-list-mobile__head"><div class="wdb-list-mobile__title-group"><p class="wdb-list-mobile__title">' . esc_html((string) $row['nama_pesantren']) . '</p></div></div>';
             $html .= '<div class="wdb-list-mobile__meta"><span>' . esc_html($address) . '</span></div>';
             $html .= '<div class="wdb-list-mobile__actions"><a href="' . esc_url(home_url('/detail-pesantren/' . (int) $row['id'] . '/')) . '">Lihat detail</a></div>';
             $html .= '</div>';
@@ -686,18 +683,13 @@ final class Forms
         $html .= '</div>';
         $html .= '<div class="wdb-list-table-wrap">';
         $html .= '<table class="wdb-list-table">';
-        $html .= '<thead><tr><th>Nama Pesantren</th><th>Berdiri</th><th>Pimpinan</th><th>Jenjang</th><th>Jumlah Santri</th><th>Alamat</th><th>Aksi</th></tr></thead>';
+        $html .= '<thead><tr><th>Nama Pesantren</th><th>Alamat</th><th>Aksi</th></tr></thead>';
         $html .= '<tbody>';
 
         foreach ($rows as $row) {
             $address = self::format_public_address_summary($row);
-            $year = self::format_public_year((string) ($row['berdiri_sejak'] ?? ''));
             $html .= '<tr>';
             $html .= '<td class="wdb-list-table__highlight">' . esc_html((string) $row['nama_pesantren']) . '</td>';
-            $html .= '<td>' . esc_html($year) . '</td>';
-            $html .= '<td>' . esc_html((string) ($row['nama_pimpinan'] ?? '-')) . '</td>';
-            $html .= '<td>' . esc_html(strtoupper((string) $row['jenjang_pendidikan'])) . '</td>';
-            $html .= '<td>' . esc_html((string) $row['jumlah_santri_total']) . '</td>';
             $html .= '<td>' . esc_html($address) . '</td>';
             $html .= '<td><a class="wdb-list-table__icon-action" href="' . esc_url(home_url('/detail-pesantren/' . (int) $row['id'] . '/')) . '" aria-label="Lihat detail pesantren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c5.23 0 9.27 4.11 10.68 6.02a1.6 1.6 0 010 1.96C21.27 14.89 17.23 19 12 19s-9.27-4.11-10.68-6.02a1.6 1.6 0 010-1.96C2.73 9.11 6.77 5 12 5zm0 2C8.18 7 4.96 9.8 3.45 12 4.96 14.2 8.18 17 12 17s7.04-2.8 8.55-5C19.04 9.8 15.82 7 12 7zm0 2.5A2.5 2.5 0 1112 14.5 2.5 2.5 0 0112 9.5z"/></svg></a></td>';
             $html .= '</tr>';
@@ -2326,19 +2318,21 @@ final class Forms
 
     private static function render_public_pesantren_news(string $nama_pesantren): string
     {
-        $posts = self::get_posts_by_exact_tag_name($nama_pesantren, 3);
+        $posts = self::get_posts_by_exact_tag_name($nama_pesantren, 5);
 
         if (empty($posts)) {
             return '';
         }
 
         $html = '<section class="wdb-detail-card">';
-        $html .= '<h2 class="wdb-detail-section-title">Berita Tentang Pesantren</h2>';
+        $html .= '<h2 class="wdb-detail-section-title">Konten Terkait ' . esc_html($nama_pesantren) . '</h2>';
         $html .= '<div class="wdb-detail-news">';
 
         foreach ($posts as $post) {
             $html .= '<article class="wdb-detail-news__item">';
+            $html .= '<p class="wdb-detail-news__badge">' . esc_html(self::get_post_badge_label($post)) . '</p>';
             $html .= '<h3 class="wdb-detail-news__title"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a></h3>';
+            $html .= '<p class="wdb-detail-news__meta">' . esc_html(self::format_post_meta_line($post)) . '</p>';
             $html .= '</article>';
         }
 
@@ -2390,19 +2384,21 @@ final class Forms
 
     private static function render_public_alumni_news(string $nama_alumni): string
     {
-        $posts = self::get_posts_by_exact_tag_name($nama_alumni, 3);
+        $posts = self::get_posts_by_exact_tag_name($nama_alumni, 5);
 
         if (empty($posts)) {
             return '';
         }
 
         $html = '<section class="wdb-detail-card">';
-        $html .= '<h2 class="wdb-detail-section-title">Berita Tentang Alumni</h2>';
+        $html .= '<h2 class="wdb-detail-section-title">Konten Terkait ' . esc_html($nama_alumni) . '</h2>';
         $html .= '<div class="wdb-detail-news">';
 
         foreach ($posts as $post) {
             $html .= '<article class="wdb-detail-news__item">';
+            $html .= '<p class="wdb-detail-news__badge">' . esc_html(self::get_post_badge_label($post)) . '</p>';
             $html .= '<h3 class="wdb-detail-news__title"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a></h3>';
+            $html .= '<p class="wdb-detail-news__meta">' . esc_html(self::format_post_meta_line($post)) . '</p>';
             $html .= '</article>';
         }
 
@@ -2410,6 +2406,56 @@ final class Forms
         $html .= '</section>';
 
         return $html;
+    }
+
+    private static function get_post_badge_label(\WP_Post $post): string
+    {
+        $terms = get_the_terms($post, 'category');
+
+        if (is_array($terms) && ! empty($terms)) {
+            $first = reset($terms);
+
+            if ($first instanceof \WP_Term && '' !== trim((string) $first->name)) {
+                return (string) $first->name;
+            }
+        }
+
+        return self::get_post_type_label((string) get_post_type($post));
+    }
+
+    private static function get_post_type_label(string $post_type): string
+    {
+        if ('' === $post_type) {
+            return 'Konten';
+        }
+
+        $object = get_post_type_object($post_type);
+
+        if ($object && isset($object->labels->singular_name) && '' !== trim((string) $object->labels->singular_name)) {
+            return (string) $object->labels->singular_name;
+        }
+
+        return ucfirst($post_type);
+    }
+
+    private static function format_post_meta_line(\WP_Post $post): string
+    {
+        $date_text = get_the_date('l, j F Y', $post);
+        $time_text = get_the_time('H:i', $post);
+
+        if ('' === $date_text && '' === $time_text) {
+            return '';
+        }
+
+        if ('' === $date_text) {
+            return $time_text . ' WIB';
+        }
+
+        if ('' === $time_text) {
+            return $date_text;
+        }
+
+        return $date_text . ' | ' . $time_text . ' WIB';
     }
 
     private static function render_public_related_alumni(array $record, ?array $address): string
@@ -2422,13 +2468,36 @@ final class Forms
 
         $html = '<section class="wdb-detail-card">';
         $html .= '<h2 class="wdb-detail-section-title">Alumni Lain</h2>';
-        $html .= '<div class="wdb-detail-related-grid">';
+        $html .= '<div class="wdb-list-card">';
+        $html .= '<div class="wdb-list-mobile">';
 
         foreach ($rows as $row) {
-            $html .= self::render_public_related_alumni_card($row);
+            $address_label = self::format_public_alumni_address_summary($row);
+            $html .= '<div class="wdb-list-mobile__item">';
+            $html .= '<div class="wdb-list-mobile__head"><div class="wdb-list-mobile__title-group"><p class="wdb-list-mobile__title">' . esc_html((string) $row['nama_lengkap']) . '</p></div></div>';
+            $html .= '<div class="wdb-list-mobile__meta"><span>' . esc_html($address_label) . '</span></div>';
+            $html .= '<div class="wdb-list-mobile__meta"><span>Alumni ' . esc_html((string) ($row['alumni_tahun'] ?? '')) . '</span></div>';
+            $html .= '<div class="wdb-list-mobile__actions"><a href="' . esc_url(home_url('/detail-alumni/' . (int) $row['id'] . '/')) . '">Lihat detail</a></div>';
+            $html .= '</div>';
         }
 
         $html .= '</div>';
+        $html .= '<div class="wdb-list-table-wrap">';
+        $html .= '<table class="wdb-list-table">';
+        $html .= '<thead><tr><th>Nama</th><th>Alamat</th><th>Alumni</th><th>Aksi</th></tr></thead>';
+        $html .= '<tbody>';
+
+        foreach ($rows as $row) {
+            $address_label = self::format_public_alumni_address_summary($row);
+            $html .= '<tr>';
+            $html .= '<td class="wdb-list-table__highlight">' . esc_html((string) $row['nama_lengkap']) . '</td>';
+            $html .= '<td>' . esc_html($address_label) . '</td>';
+            $html .= '<td>' . esc_html((string) ($row['alumni_tahun'] ?? '')) . '</td>';
+            $html .= '<td><a class="wdb-list-table__icon-action" href="' . esc_url(home_url('/detail-alumni/' . (int) $row['id'] . '/')) . '" aria-label="Lihat detail alumni"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c5.23 0 9.27 4.11 10.68 6.02a1.6 1.6 0 010 1.96C21.27 14.89 17.23 19 12 19s-9.27-4.11-10.68-6.02a1.6 1.6 0 010-1.96C2.73 9.11 6.77 5 12 5zm0 2C8.18 7 4.96 9.8 3.45 12 4.96 14.2 8.18 17 12 17s7.04-2.8 8.55-5C19.04 9.8 15.82 7 12 7zm0 2.5A2.5 2.5 0 1112 14.5 2.5 2.5 0 0112 9.5z"/></svg></a></td>';
+            $html .= '</tr>';
+        }
+
+        $html .= '</tbody></table></div>';
         $html .= '</section>';
 
         return $html;
@@ -2444,13 +2513,34 @@ final class Forms
 
         $html = '<section class="wdb-detail-card">';
         $html .= '<h2 class="wdb-detail-section-title">Pesantren Lain</h2>';
-        $html .= '<div class="wdb-detail-related-grid">';
+        $html .= '<div class="wdb-list-card">';
+        $html .= '<div class="wdb-list-mobile">';
 
         foreach ($rows as $row) {
-            $html .= self::render_public_pesantren_card($row);
+            $address_label = self::format_public_address_summary($row);
+            $html .= '<div class="wdb-list-mobile__item">';
+            $html .= '<div class="wdb-list-mobile__head"><div class="wdb-list-mobile__title-group"><p class="wdb-list-mobile__title">' . esc_html((string) $row['nama_pesantren']) . '</p></div></div>';
+            $html .= '<div class="wdb-list-mobile__meta"><span>' . esc_html($address_label) . '</span></div>';
+            $html .= '<div class="wdb-list-mobile__actions"><a href="' . esc_url(home_url('/detail-pesantren/' . (int) $row['id'] . '/')) . '">Lihat detail</a></div>';
+            $html .= '</div>';
         }
 
         $html .= '</div>';
+        $html .= '<div class="wdb-list-table-wrap">';
+        $html .= '<table class="wdb-list-table">';
+        $html .= '<thead><tr><th>Nama Pesantren</th><th>Alamat</th><th>Aksi</th></tr></thead>';
+        $html .= '<tbody>';
+
+        foreach ($rows as $row) {
+            $address_label = self::format_public_address_summary($row);
+            $html .= '<tr>';
+            $html .= '<td class="wdb-list-table__highlight">' . esc_html((string) $row['nama_pesantren']) . '</td>';
+            $html .= '<td>' . esc_html($address_label) . '</td>';
+            $html .= '<td><a class="wdb-list-table__icon-action" href="' . esc_url(home_url('/detail-pesantren/' . (int) $row['id'] . '/')) . '" aria-label="Lihat detail pesantren"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c5.23 0 9.27 4.11 10.68 6.02a1.6 1.6 0 010 1.96C21.27 14.89 17.23 19 12 19s-9.27-4.11-10.68-6.02a1.6 1.6 0 010-1.96C2.73 9.11 6.77 5 12 5zm0 2C8.18 7 4.96 9.8 3.45 12 4.96 14.2 8.18 17 12 17s7.04-2.8 8.55-5C19.04 9.8 15.82 7 12 7zm0 2.5A2.5 2.5 0 1112 14.5 2.5 2.5 0 0112 9.5z"/></svg></a></td>';
+            $html .= '</tr>';
+        }
+
+        $html .= '</tbody></table></div>';
         $html .= '</section>';
 
         return $html;
@@ -2554,7 +2644,8 @@ final class Forms
 
             $rows = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT pesantren.id, pesantren.nama_pesantren, pesantren.jenjang_pendidikan, pesantren.jenis_pondok, pesantren.jumlah_santri_total, pesantren.photo_andalan_id
+                    "SELECT pesantren.id, pesantren.nama_pesantren, pesantren.jenjang_pendidikan, pesantren.jenis_pondok, pesantren.jumlah_santri_total, pesantren.photo_andalan_id,
+                        addresses.desa_name, addresses.kecamatan_name, addresses.kabupaten_name, addresses.provinsi_name
                     FROM {$wpdb->prefix}wdb_pesantren AS pesantren
                     LEFT JOIN {$wpdb->prefix}wdb_addresses AS addresses ON addresses.id = pesantren.address_id
                     WHERE pesantren.status = 'published' AND pesantren.id <> %d AND " . $source['where'] . '
@@ -2574,10 +2665,12 @@ final class Forms
 
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, nama_pesantren, jenjang_pendidikan, jenis_pondok, jumlah_santri_total, photo_andalan_id
-                FROM {$wpdb->prefix}wdb_pesantren
-                WHERE status = 'published' AND id <> %d
-                ORDER BY id DESC
+                "SELECT pesantren.id, pesantren.nama_pesantren, pesantren.jenjang_pendidikan, pesantren.jenis_pondok, pesantren.jumlah_santri_total, pesantren.photo_andalan_id,
+                    addresses.desa_name, addresses.kecamatan_name, addresses.kabupaten_name, addresses.provinsi_name
+                FROM {$wpdb->prefix}wdb_pesantren AS pesantren
+                LEFT JOIN {$wpdb->prefix}wdb_addresses AS addresses ON addresses.id = pesantren.address_id
+                WHERE pesantren.status = 'published' AND pesantren.id <> %d
+                ORDER BY pesantren.id DESC
                 LIMIT %d",
                 $record_id,
                 $limit
