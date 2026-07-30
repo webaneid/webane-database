@@ -15,7 +15,7 @@ Website resmi: [https://webane.com](https://webane.com)
 - Statistik publik organisasi.
 - Import wilayah Indonesia sampai provinsi, kabupaten, kecamatan, dan desa.
 - Autocomplete reusable untuk field referensi panjang.
-- Upload gambar terkontrol untuk pasphoto alumni dan photo andalan pesantren.
+- Export database pesantren dan alumni ke Excel (.csv) dari halaman admin.
 - Update plugin melalui GitHub Releases.
 
 ## Modul Saat Ini

@@ -176,6 +176,11 @@ final class CrudPage
             check_admin_referer('wdb_delete_' . $page . '_' . absint($_GET['id']));
             self::delete_record($page, $pages[$page], absint($_GET['id']));
         }
+
+        if (isset($_GET['action']) && 'export_excel' === sanitize_key(wp_unslash($_GET['action']))) {
+            check_admin_referer('wdb_export_' . $page);
+            self::export_excel($page, $pages[$page]);
+        }
     }
 
     public static function render(string $page): void
@@ -235,7 +240,19 @@ final class CrudPage
             admin_url('admin.php')
         );
 
-        echo '<p><a href="' . esc_url($add_url) . '" class="page-title-action">Tambah Baru</a></p>';
+        $export_url = wp_nonce_url(
+            add_query_arg(
+                [
+                    'page' => $page,
+                    'action' => 'export_excel',
+                ],
+                admin_url('admin.php')
+            ),
+            'wdb_export_' . $page
+        );
+
+        echo '<p><a href="' . esc_url($add_url) . '" class="page-title-action">Tambah Baru</a> ';
+        echo '<a href="' . esc_url($export_url) . '" class="button button-secondary">Export ke Excel (.csv)</a></p>';
 
         $records = self::get_records($config);
         $columns = $config['list_columns'];
@@ -1327,5 +1344,325 @@ final class CrudPage
             'Pelajar / Mahasiswa' => 'Umum / Lainnya - Pelajar / Mahasiswa',
             'Pensiunan' => 'Umum / Lainnya - Pensiunan',
         ];
+    }
+
+    private static function export_excel(string $page, array $config): void
+    {
+        if (! current_user_can(Menu::capability())) {
+            wp_die('Unauthorized');
+        }
+
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        $filename = $page . '-export-' . date('Y-m-d') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+
+        if (! $output) {
+            wp_die('Failed to open output stream');
+        }
+
+        // Output UTF-8 BOM for Microsoft Excel compatibility
+        fwrite($output, "\xEF\xBB\xBF");
+
+        if ('wdb-alumni' === $page) {
+            self::export_alumni_csv($output);
+        } elseif ('wdb-pesantren' === $page) {
+            self::export_pesantren_csv($output);
+        } else {
+            self::export_generic_csv($output, $config);
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    private static function export_alumni_csv($output): void
+    {
+        global $wpdb;
+
+        $headers = [
+            'ID',
+            'Nama Lengkap',
+            'Tempat Lahir',
+            'Tanggal Lahir',
+            'Alumni Tahun',
+            'Jenis Kelamin',
+            'Alamat Lengkap',
+            'Provinsi',
+            'Kabupaten/Kota',
+            'Kecamatan',
+            'Desa',
+            'Email',
+            'Nomor HP',
+            'HP Publik',
+            'Nomor WhatsApp',
+            'WA Publik',
+            'Pekerjaan',
+            'Nama Lembaga',
+            'Jabatan',
+            'Profil URL',
+            'Instagram',
+            'Facebook',
+            'TikTok',
+            'YouTube',
+            'Website',
+            'Pasphoto URL',
+            'Status',
+            'Tanggal Dibuat',
+            'Tanggal Diperbarui',
+        ];
+
+        fputcsv($output, $headers);
+
+        $alumni_table = $wpdb->prefix . 'wdb_alumni';
+        $addresses_table = $wpdb->prefix . 'wdb_addresses';
+        $contacts_table = $wpdb->prefix . 'wdb_contacts';
+        $jobs_table = $wpdb->prefix . 'wdb_jobs';
+        $socials_table = $wpdb->prefix . 'wdb_socials';
+
+        $sql = "SELECT 
+            a.id,
+            a.nama_lengkap,
+            a.tempat_lahir,
+            a.tanggal_lahir,
+            a.alumni_tahun,
+            a.jenis_kelamin,
+            a.status,
+            a.pasphoto_id,
+            addr.alamat_lengkap,
+            addr.provinsi_name,
+            addr.kabupaten_name,
+            addr.kecamatan_name,
+            addr.desa_name,
+            c.email,
+            c.nomor_hp,
+            c.nomor_hp_tampil_publik,
+            c.nomor_whatsapp,
+            c.whatsapp_tampil_publik,
+            j.pekerjaan,
+            j.nama_lembaga,
+            j.jabatan,
+            s.url_profil,
+            s.instagram,
+            s.facebook,
+            s.tiktok,
+            s.youtube,
+            s.website,
+            a.created_at,
+            a.updated_at
+        FROM {$alumni_table} a
+        LEFT JOIN {$addresses_table} addr ON a.address_id = addr.id
+        LEFT JOIN {$contacts_table} c ON a.contact_id = c.id
+        LEFT JOIN {$jobs_table} j ON a.job_id = j.id
+        LEFT JOIN {$socials_table} s ON a.social_id = s.id
+        ORDER BY a.id DESC";
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        if (! empty($rows)) {
+            foreach ($rows as $row) {
+                $pasphoto_url = '';
+                if (! empty($row['pasphoto_id'])) {
+                    $pasphoto_url = wp_get_attachment_url((int) $row['pasphoto_id']) ?: '';
+                }
+
+                $data = [
+                    $row['id'],
+                    $row['nama_lengkap'] ?? '',
+                    $row['tempat_lahir'] ?? '',
+                    $row['tanggal_lahir'] ?? '',
+                    $row['alumni_tahun'] ?? '',
+                    $row['jenis_kelamin'] ?? '',
+                    $row['alamat_lengkap'] ?? '',
+                    $row['provinsi_name'] ?? '',
+                    $row['kabupaten_name'] ?? '',
+                    $row['kecamatan_name'] ?? '',
+                    $row['desa_name'] ?? '',
+                    $row['email'] ?? '',
+                    $row['nomor_hp'] ?? '',
+                    ! empty($row['nomor_hp_tampil_publik']) ? 'Ya' : 'Tidak',
+                    $row['nomor_whatsapp'] ?? '',
+                    ! empty($row['whatsapp_tampil_publik']) ? 'Ya' : 'Tidak',
+                    $row['pekerjaan'] ?? '',
+                    $row['nama_lembaga'] ?? '',
+                    $row['jabatan'] ?? '',
+                    $row['url_profil'] ?? '',
+                    $row['instagram'] ?? '',
+                    $row['facebook'] ?? '',
+                    $row['tiktok'] ?? '',
+                    $row['youtube'] ?? '',
+                    $row['website'] ?? '',
+                    $pasphoto_url,
+                    $row['status'] ?? '',
+                    $row['created_at'] ?? '',
+                    $row['updated_at'] ?? '',
+                ];
+
+                fputcsv($output, $data);
+            }
+        }
+    }
+
+    private static function export_pesantren_csv($output): void
+    {
+        global $wpdb;
+
+        $headers = [
+            'ID',
+            'Nama Pesantren',
+            'Berdiri Sejak',
+            'Luas Area',
+            'Nama Pimpinan',
+            'Nomor HP Pimpinan',
+            'Jenjang Pendidikan',
+            'Jenis Pondok',
+            'Santri Putra',
+            'Santri Putri',
+            'Jumlah Santri Total',
+            'Asatidz',
+            'Asatidzah',
+            'Jumlah Guru Total',
+            'Alamat Lengkap',
+            'Provinsi',
+            'Kabupaten/Kota',
+            'Kecamatan',
+            'Desa',
+            'Email',
+            'Nomor HP',
+            'HP Publik',
+            'Nomor WhatsApp',
+            'WA Publik',
+            'Profil URL',
+            'Instagram',
+            'Facebook',
+            'TikTok',
+            'YouTube',
+            'Website',
+            'Photo Andalan URL',
+            'Status',
+            'Tanggal Dibuat',
+            'Tanggal Diperbarui',
+        ];
+
+        fputcsv($output, $headers);
+
+        $pesantren_table = $wpdb->prefix . 'wdb_pesantren';
+        $addresses_table = $wpdb->prefix . 'wdb_addresses';
+        $contacts_table = $wpdb->prefix . 'wdb_contacts';
+        $socials_table = $wpdb->prefix . 'wdb_socials';
+
+        $sql = "SELECT 
+            p.id,
+            p.nama_pesantren,
+            p.berdiri_sejak,
+            p.luas_area,
+            p.nama_pimpinan,
+            p.nomor_hp_pimpinan,
+            p.jenjang_pendidikan,
+            p.jenis_pondok,
+            p.santri_putra,
+            p.santri_putri,
+            p.jumlah_santri_total,
+            p.asatidz,
+            p.asatidzah,
+            p.jumlah_guru_total,
+            p.status,
+            p.photo_andalan_id,
+            addr.alamat_lengkap,
+            addr.provinsi_name,
+            addr.kabupaten_name,
+            addr.kecamatan_name,
+            addr.desa_name,
+            c.email,
+            c.nomor_hp,
+            c.nomor_hp_tampil_publik,
+            c.nomor_whatsapp,
+            c.whatsapp_tampil_publik,
+            s.url_profil,
+            s.instagram,
+            s.facebook,
+            s.tiktok,
+            s.youtube,
+            s.website,
+            p.created_at,
+            p.updated_at
+        FROM {$pesantren_table} p
+        LEFT JOIN {$addresses_table} addr ON p.address_id = addr.id
+        LEFT JOIN {$contacts_table} c ON p.contact_id = c.id
+        LEFT JOIN {$socials_table} s ON p.social_id = s.id
+        ORDER BY p.id DESC";
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        if (! empty($rows)) {
+            foreach ($rows as $row) {
+                $photo_url = '';
+                if (! empty($row['photo_andalan_id'])) {
+                    $photo_url = wp_get_attachment_url((int) $row['photo_andalan_id']) ?: '';
+                }
+
+                $data = [
+                    $row['id'],
+                    $row['nama_pesantren'] ?? '',
+                    $row['berdiri_sejak'] ?? '',
+                    $row['luas_area'] ?? '',
+                    $row['nama_pimpinan'] ?? '',
+                    $row['nomor_hp_pimpinan'] ?? '',
+                    $row['jenjang_pendidikan'] ?? '',
+                    $row['jenis_pondok'] ?? '',
+                    $row['santri_putra'] ?? 0,
+                    $row['santri_putri'] ?? 0,
+                    $row['jumlah_santri_total'] ?? 0,
+                    $row['asatidz'] ?? 0,
+                    $row['asatidzah'] ?? 0,
+                    $row['jumlah_guru_total'] ?? 0,
+                    $row['alamat_lengkap'] ?? '',
+                    $row['provinsi_name'] ?? '',
+                    $row['kabupaten_name'] ?? '',
+                    $row['kecamatan_name'] ?? '',
+                    $row['desa_name'] ?? '',
+                    $row['email'] ?? '',
+                    $row['nomor_hp'] ?? '',
+                    ! empty($row['nomor_hp_tampil_publik']) ? 'Ya' : 'Tidak',
+                    $row['nomor_whatsapp'] ?? '',
+                    ! empty($row['whatsapp_tampil_publik']) ? 'Ya' : 'Tidak',
+                    $row['url_profil'] ?? '',
+                    $row['instagram'] ?? '',
+                    $row['facebook'] ?? '',
+                    $row['tiktok'] ?? '',
+                    $row['youtube'] ?? '',
+                    $row['website'] ?? '',
+                    $photo_url,
+                    $row['status'] ?? '',
+                    $row['created_at'] ?? '',
+                    $row['updated_at'] ?? '',
+                ];
+
+                fputcsv($output, $data);
+            }
+        }
+    }
+
+    private static function export_generic_csv($output, array $config): void
+    {
+        $records = self::get_records($config);
+        if (empty($records)) {
+            return;
+        }
+
+        $headers = array_keys($records[0]);
+        fputcsv($output, $headers);
+
+        foreach ($records as $record) {
+            fputcsv($output, array_values($record));
+        }
     }
 }
